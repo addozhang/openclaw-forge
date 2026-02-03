@@ -19,6 +19,10 @@ jobs:
         with:
           python-version: '3.x'
       
+      - name: Install dependencies
+        run: |
+          pip install PyYAML
+      
       - name: Install OpenClaw skill-creator
         run: |
           # 下载 OpenClaw skill-creator 打包脚本和依赖
