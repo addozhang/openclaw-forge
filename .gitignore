@@ -1,5 +1,5 @@
 # OpenClaw Workspace - 个人配置排除
-# 只保留 skills/ 目录推送到公开仓库
+# 只保留 skills/ 和 agents/ 目录推送到公开仓库
 
 # 个人配置文件
 AGENTS.md
@@ -12,9 +12,6 @@ USER.md
 
 # 内存文件
 memory/
-
-# 个人 agents
-agents/
 
 # 研究文件
 research/
