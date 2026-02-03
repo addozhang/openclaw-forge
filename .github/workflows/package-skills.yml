@@ -21,10 +21,11 @@ jobs:
       
       - name: Install OpenClaw skill-creator
         run: |
-          # 下载 OpenClaw skill-creator 打包脚本
-          # 假设 package_skill.py 在 OpenClaw 仓库中
-          curl -o package_skill.py https://raw.githubusercontent.com/openclaw/openclaw/main/skills/skill-creator/scripts/package_skill.py
-          chmod +x package_skill.py
+          # 下载 OpenClaw skill-creator 打包脚本和依赖
+          mkdir -p scripts
+          curl -o scripts/package_skill.py https://raw.githubusercontent.com/openclaw/openclaw/main/skills/skill-creator/scripts/package_skill.py
+          curl -o scripts/quick_validate.py https://raw.githubusercontent.com/openclaw/openclaw/main/skills/skill-creator/scripts/quick_validate.py
+          chmod +x scripts/package_skill.py
       
       - name: Package all skills
         run: |
@@ -32,7 +33,7 @@ jobs:
           for skill_dir in skills/*/; do
             if [ -f "${skill_dir}SKILL.md" ]; then
               echo "Packaging ${skill_dir}..."
-              python3 package_skill.py "${skill_dir}" dist/
+              python3 scripts/package_skill.py "${skill_dir}" dist/
             fi
           done
       
