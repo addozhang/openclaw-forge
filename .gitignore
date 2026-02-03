@@ -1,0 +1,42 @@
+# OpenClaw Workspace - 个人配置排除
+# 只保留 skills/ 目录推送到公开仓库
+
+# 个人配置文件
+AGENTS.md
+BOOTSTRAP.md
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+
+# 内存文件
+memory/
+
+# 个人 agents
+agents/
+
+# 研究文件
+research/
+
+# 凭证和敏感信息
+credentials.json
+token.json
+*.pem
+*.key
+.env
+
+# Node.js
+node_modules/
+package-lock.json
+package.json
+
+# 临时文件
+*.log
+*.tmp
+.DS_Store
+
+# 技能测试文件（非核心）
+*.skill
+google-tasks.js
+openclaw-skills
