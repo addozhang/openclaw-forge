@@ -7,11 +7,11 @@ set -e
 echo "# 🔥 Hacker News 今日热门" >&2
 echo "" >&2
 
-TOP_STORIES=$(curl -s "https://hacker-news.firebaseio.com/v0/topstories.json" | jq -r '.[:10][]')
+TOP_STORIES=$(curl -s "https://hacker-news.firebaseio.com/v0/topstories.json" | jq -r '.[:30][]')
 
 COUNT=0
 for story_id in $TOP_STORIES; do
-    if [ $COUNT -ge 8 ]; then
+    if [ $COUNT -ge 20 ]; then
         break
     fi
     

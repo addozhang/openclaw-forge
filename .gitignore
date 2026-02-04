@@ -37,3 +37,4 @@ package.json
 *.skill
 google-tasks.js
 openclaw-skills
+.coder
