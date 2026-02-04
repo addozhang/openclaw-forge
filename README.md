@@ -1,46 +1,48 @@
 # OpenClaw Forge 🛠️
 
-OpenClaw skills 和 agents 工坊 —— 为 AI 助手提供实用能力的工具集合。
+A collection of skills and agents that empower AI assistants with practical capabilities.
+
+[中文文档](README_zh.md)
 
 ## Skills
 
-专用技能模块，提供特定功能：
+Specialized modules that provide specific functionalities:
 
-- **google-tasks** - Google Tasks 任务管理（OAuth 认证，增删查改）
-- **mcp-builder** - MCP (Model Context Protocol) 服务器开发指南
-- **ralph-loop** - 生成 AI agent 循环脚本（支持 Codex, Claude Code, Goose 等）
-- **research-prep** - 技术写作前的资料收集与整理工作流
-- **system-status** - 系统健康检查（CPU、内存、磁盘、进程、网络）
-- **task-status** - 长任务状态更新助手（周期性汇报、模板化消息）
+- **google-tasks** - Google Tasks management (OAuth authentication, CRUD operations)
+- **mcp-builder** - Guide for building MCP (Model Context Protocol) servers
+- **ralph-loop** - Generate AI agent loop scripts (supports Codex, Claude Code, Goose, etc.)
+- **research-prep** - Research material collection and organization workflow for technical writing
+- **system-status** - System health monitoring (CPU, memory, disk, processes, network)
+- **task-status** - Long-running task status update helper (periodic reporting, templated messages)
 
 ## Agents
 
-自主运行的智能代理：
+Autonomous intelligent agents:
 
-- **daily-briefing** - 每日简报生成器（邮件、日历、任务汇总）
-- **obsidian-organizer** - Obsidian 笔记整理助手（自动分类、链接补全）
+- **daily-briefing** - Daily briefing generator (email, calendar, task summary)
+- **obsidian-organizer** - Obsidian note organizer (auto-categorization, link completion)
 
-## 使用方式
+## Usage
 
-每个 skill 和 agent 目录中都包含详细的 `SKILL.md` 或 `AGENT.md` 说明文档。
+Each skill and agent directory contains detailed documentation in `SKILL.md` or `AGENT.md`.
 
-## 结构
+## Structure
 
 ```
 openclaw-forge/
-├── skills/           # 技能模块
+├── skills/           # Skill modules
 │   └── [skill-name]/
 │       ├── SKILL.md
 │       └── scripts/
-└── agents/           # 智能代理
+└── agents/           # Intelligent agents
     └── [agent-name]/
         └── AGENT.md
 ```
 
-## 贡献
+## Contributing
 
-欢迎提交新的 skills 和 agents！请确保包含完整的文档和示例。
+New skills and agents are welcome! Please ensure complete documentation and examples are included.
 
-## 许可
+## License
 
 MIT
