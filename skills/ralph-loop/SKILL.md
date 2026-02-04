@@ -14,44 +14,30 @@ Generate a ready-to-run bash script that runs an AI coding CLI in a loop. Align 
 
 The loop persists context via `PROMPT.md` + `AGENTS.md` (loaded every iteration) plus the on-disk plan/specs.
 
-## TTY Requirements & Mode Selection
+---
 
-Some coding agents **require a real terminal (TTY)** to work properly:
+## TTY Requirements
 
-### Interactive CLIs (require TTY)
-- **OpenCode** (`opencode run`) - hangs without TTY
-- **Codex** (`codex exec`) - interactive prompts
-- **Claude Code** (`claude`) - progress bars
-- **Pi** (`pi`) - interactive mode
-- **Goose** (`goose run`) - interactive sessions
+Some coding agents **require a real terminal (TTY)** to work properly and will hang without it:
 
-**Solution**: Use **exec + process mode** (recommended)
+**Interactive CLIs (need TTY)**:
+- OpenCode, Codex, Claude Code, Pi, Goose
 
-### Non-Interactive CLIs (pure background)
-- Custom scripts with file-based I/O
-- **aider** - reads from stdin/files
-- Any CLI that doesn't need terminal
+**Non-Interactive CLIs (file-based)**:
+- aider, custom scripts
 
-**Solution**: Use **simple loop mode** (legacy, still supported)
+**Solution**: Use **exec + process mode** for interactive CLIs, or simple loop for file-based tools.
 
 ---
 
-## Two Execution Modes
+## Execution Modes
 
-### Mode 1: exec + process (Recommended)
+### exec + process (Recommended for Interactive CLIs)
 
-✅ **Proper TTY support**  
-✅ **Background monitoring with OpenClaw process tools**  
-✅ **Real-time logs and progress**  
-✅ **Timeout handling**  
-✅ **Parallel sessions support**  
-✅ **Workdir isolation**
+Provides proper TTY support with background monitoring:
 
-**When to use**: OpenCode, Codex, Claude Code, Pi, Goose
-
-**How it works**:
 ```bash
-# Start agent in background with TTY
+# Start agent with TTY
 SESSION_ID=$(openclaw exec \
   command:"opencode run --model $MODEL \"$(cat PROMPT.md)\"" \
   workdir:"$PWD" \
@@ -60,135 +46,122 @@ SESSION_ID=$(openclaw exec \
 
 # Monitor progress
 openclaw process action:log sessionId:"$SESSION_ID"
-
-# Check if done
 openclaw process action:poll sessionId:"$SESSION_ID"
 
 # Kill if needed
 openclaw process action:kill sessionId:"$SESSION_ID"
 ```
 
-### Mode 2: Simple Loop (Legacy)
+**Benefits**: TTY support, real-time logs, timeout handling, parallel sessions, workdir isolation
 
-⚠️ **No TTY support**  
-✅ **File-based input/output**  
-✅ **Works for traditional CLIs**
+### Simple Loop (Minimal)
 
-**When to use**: aider, custom scripts, any non-interactive CLI
+For quick iterations or non-interactive CLIs:
 
-**How it works**:
 ```bash
-for i in $(seq 1 $MAX_ITERS); do
-  $CLI_CMD "$(cat PROMPT.md)" | tee -a log.txt
+while :; do 
+  cat PROMPT.md | opencode run --model $MODEL
 done
 ```
+
+**Use**: Quick tests, file-based CLIs. Stop with `Ctrl+C`.
 
 ---
 
 ## Workflow
 
-### 1) Collect inputs (ask if missing)
+### 1) Collect inputs
 
-#### Required
-- **Goal / JTBD** (what outcome is needed)
-- **CLI** (`codex`, `claude-code`, `opencode`, `goose`, `pi`, other)
-- **Mode**: `PLANNING`, `BUILDING`, or `BOTH`
-- **Max iterations** (default: PLANNING=5, BUILDING=10)
+**Required**:
+- Goal / JTBD
+- CLI (`opencode`, `codex`, `claude`, `goose`, `pi`, other)
+- Mode (`PLANNING`, `BUILDING`, or `BOTH`)
+- Max iterations (default: PLANNING=5, BUILDING=10)
 
-#### Auto-detect
-- **Execution mode**: Check if CLI is in "Interactive" list → exec+process, else ask user
-- **Model flag**: Extract from CLI requirements (e.g., `--model` for OpenCode/Codex)
+**Optional**:
+- Completion sentinel (default: `STATUS: COMPLETE` in `IMPLEMENTATION_PLAN.md`)
+- Workdir (default: `$PWD`)
+- Timeout (default: 3600s per iteration)
+- Sandbox choice
+- Auto-approve flags (`--full-auto`, `--yolo`, `--dangerously-skip-permissions`)
 
-#### Optional
-- **Completion condition**
-  - Plan sentinel (default: `STATUS: COMPLETE` in `IMPLEMENTATION_PLAN.md`)
-  - Custom regex pattern
-- **Sandbox choice** (`none` | `docker` | other) + **security posture**
-- **Backpressure commands** (tests/lints/build) to embed in `AGENTS.md`
-- **Auto-approve flags** (ask explicitly)
-  - Codex: `--full-auto` or `--yolo`
-  - Claude Code: `--dangerously-skip-permissions`
-  - OpenCode: (no flag needed)
-- **Workdir** (default: `$PWD`)
-- **Timeout** (default: 3600s per iteration)
+**Auto-detect**:
+- If CLI is in interactive list → use exec + process mode
+- Extract model flag from CLI requirements
 
-### 2) Phase 1 — Requirements → specs
-If the user wants "full Ralph" (or unclear requirements), do this before the loop:
-- Break the JTBD into **topics of concern** (1 topic = 1 spec file).
-- For each topic, draft `specs/<topic>.md`.
-- Use subagents to load URLs or existing docs into context for spec quality.
-- Keep specs short and testable.
+### 2) Requirements → specs (optional)
 
-### 3) Phase 2/3 — PROMPT.md + AGENTS.md
-- **Context loaded each iteration:** `PROMPT.md` + `AGENTS.md`.
-- `AGENTS.md` should include:
-  - project test commands (backpressure)
-  - build/run instructions
-  - any operational learnings
-- `PROMPT.md` should reference:
-  - `specs/*.md`
-  - `IMPLEMENTATION_PLAN.md`
-  - any relevant project files/dirs
+If requirements are unclear:
+- Break JTBD into topics of concern
+- Draft `specs/<topic>.md` for each
+- Keep specs short and testable
 
-### 4) Two prompt templates (PLANNING vs BUILDING)
-Create **two prompts** and swap `PROMPT.md` based on mode.
+### 3) PROMPT.md + AGENTS.md
 
-**PLANNING prompt (no implementation):**
+**PROMPT.md** references:
+- `specs/*.md`
+- `IMPLEMENTATION_PLAN.md`
+- Relevant project files
+
+**AGENTS.md** includes:
+- Test commands (backpressure)
+- Build/run instructions
+- Operational learnings
+
+### 4) Prompt templates
+
+**PLANNING prompt** (no implementation):
 ```
-You are running a Ralph PLANNING loop for: <JTBD/GOAL>.
+You are running a Ralph PLANNING loop for: <GOAL>.
 
-Read specs/* and the current codebase. Do a gap analysis and update IMPLEMENTATION_PLAN.md only.
+Read specs/* and current codebase. Update IMPLEMENTATION_PLAN.md only.
+
 Rules:
-- Do NOT implement.
-- Do NOT commit.
-- Prioritize tasks and keep plan concise.
-- If requirements are unclear, write clarifying questions into the plan.
+- Do NOT implement
+- Do NOT commit
+- Create prioritized task list
+- If unclear, write questions
 
 Completion:
-If the plan is complete, add line: STATUS: COMPLETE
+If plan is ready, add: STATUS: PLANNING_COMPLETE
 ```
 
-**BUILDING prompt:**
+**BUILDING prompt**:
 ```
-You are running a Ralph BUILDING loop for: <JTBD/GOAL>.
+You are running a Ralph BUILDING loop for: <GOAL>.
 
-Context:
-- specs/*
-- IMPLEMENTATION_PLAN.md
-- AGENTS.md (tests/backpressure)
+Context: specs/*, IMPLEMENTATION_PLAN.md, AGENTS.md
 
 Tasks:
-1) Pick the most important task from IMPLEMENTATION_PLAN.md.
-2) Investigate relevant code (don't assume missing).
-3) Implement.
-4) Run the backpressure commands from AGENTS.md.
-5) Update IMPLEMENTATION_PLAN.md (mark done + notes).
-6) Update AGENTS.md if you learned new operational details.
-7) Commit with a clear message.
+1) Pick most important task
+2) Investigate code
+3) Implement
+4) Run backpressure commands from AGENTS.md
+5) Update IMPLEMENTATION_PLAN.md
+6) Update AGENTS.md with learnings
+7) Commit with clear message
 
 Completion:
-If all tasks are done, add line: STATUS: COMPLETE
+If all done, add: STATUS: COMPLETE
 ```
 
-### 5) Build the per-iteration command
+### 5) CLI commands
 
-#### Interactive CLIs (with flags)
-- Codex: `codex exec <FLAGS> "$(cat PROMPT.md)"`
-  - Requires git repo
-  - Flags: `--full-auto`, `--yolo`, `--model <model>`
-- Claude Code: `claude <FLAGS> "$(cat PROMPT.md)"`
-  - Flags: `--dangerously-skip-permissions`
-- OpenCode: `opencode run --model <MODEL> "$(cat PROMPT.md)"`
-- Goose: `goose run "$(cat PROMPT.md)"`
-- Pi: `pi --provider <PROVIDER> --model <MODEL> -p "$(cat PROMPT.md)"`
+| CLI | Command Template |
+|-----|------------------|
+| **OpenCode** | `opencode run --model <MODEL> "$(cat PROMPT.md)"` |
+| **Codex** | `codex exec <FLAGS> "$(cat PROMPT.md)"` (requires git) |
+| **Claude Code** | `claude <FLAGS> "$(cat PROMPT.md)"` |
+| **Pi** | `pi --provider <PROVIDER> --model <MODEL> -p "$(cat PROMPT.md)"` |
+| **Goose** | `goose run "$(cat PROMPT.md)"` |
 
-If the CLI is unknown, ask for the exact command to run each iteration.
+Common flags:
+- Codex: `--full-auto`, `--yolo`, `--model <model>`
+- Claude: `--dangerously-skip-permissions`
 
 ---
 
-## Script Templates
-
-### Template 1: exec + process Mode (Recommended for Interactive CLIs)
+## Script Template: exec + process Mode
 
 ```bash
 #!/usr/bin/env bash
@@ -203,33 +176,25 @@ MAX_PLANNING_ITERS=5
 MAX_BUILDING_ITERS=10
 WORKDIR="${PWD}"
 PLAN_SENTINEL='STATUS:\s*(PLANNING_)?COMPLETE'
-TIMEOUT=3600  # seconds per iteration
+TIMEOUT=3600
 
 # ========== Validation ==========
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  echo "❌ Run this inside a git repo."
+  echo "❌ Run inside a git repo"
   exit 1
 fi
 
 mkdir -p .ralph
 touch PROMPT.md AGENTS.md IMPLEMENTATION_PLAN.md
 
-# ========== Helper Functions ==========
+# ========== Helper: Run Iteration ==========
 run_iteration() {
-  local iter=$1
-  local phase=$2
-  local max_iters=$3
+  local iter=$1 phase=$2 max_iters=$3
   
-  echo ""
-  echo "========================================="
   echo "=== $phase iteration $iter/$max_iters ==="
-  echo "========================================="
   
-  # Start agent in background with TTY support
+  # Start agent with TTY
   local cmd="$CLI_CMD $CLI_FLAGS \"\\$(cat PROMPT.md)\""
-  echo "Command: $cmd"
-  
-  # Use openclaw exec for proper TTY + background
   local session_output=$(openclaw exec \
     command:"$cmd" \
     workdir:"$WORKDIR" \
@@ -237,29 +202,23 @@ run_iteration() {
     timeout:$TIMEOUT \
     yieldMs:60000 2>&1)
   
-  # Extract session ID
   local session_id=$(echo "$session_output" | grep -oP 'sessionId:\s*\K\S+' | head -1)
   
   if [[ -z "$session_id" ]]; then
-    echo "❌ Failed to start session. Output:"
-    echo "$session_output"
+    echo "❌ Failed to start session"
     return 1
   fi
   
-  echo "✅ Started session: $session_id"
+  echo "✅ Session: $session_id"
   
   # Monitor until completion
   local elapsed=0
-  local check_interval=10
-  
   while [[ $elapsed -lt $TIMEOUT ]]; do
-    sleep $check_interval
-    elapsed=$((elapsed + check_interval))
+    sleep 10
+    elapsed=$((elapsed + 10))
     
-    # Check process state
     local state=$(openclaw process action:poll sessionId:"$session_id" 2>/dev/null | jq -r '.state // "unknown"')
-    
-    echo "[$(date +%H:%M:%S)] State: $state (${elapsed}s elapsed)"
+    echo "[${elapsed}s] State: $state"
     
     if [[ "$state" == "exited" ]]; then
       echo "✅ Agent finished"
@@ -268,19 +227,16 @@ run_iteration() {
     
     # Show recent output every 30s
     if (( elapsed % 30 == 0 )); then
-      echo "--- Recent output ---"
       openclaw process action:log sessionId:"$session_id" offset:-10 2>/dev/null || true
-      echo "---"
     fi
   done
   
-  # Save full logs
-  echo "Saving logs to .ralph/${phase}-iter-${iter}.log"
+  # Save logs
   openclaw process action:log sessionId:"$session_id" > ".ralph/${phase}-iter-${iter}.log" 2>&1 || true
   
-  # Check completion condition
+  # Check completion
   if grep -Eq "$PLAN_SENTINEL" IMPLEMENTATION_PLAN.md 2>/dev/null; then
-    echo "✅ Completion detected in IMPLEMENTATION_PLAN.md!"
+    echo "✅ Completion detected!"
     return 0
   fi
   
@@ -290,156 +246,56 @@ run_iteration() {
 # ========== Main Loop ==========
 case "$MODE" in
   PLANNING)
-    echo "Starting PLANNING mode..."
     cp PROMPT_PLANNING.md PROMPT.md
     for i in $(seq 1 $MAX_PLANNING_ITERS); do
-      if run_iteration $i "PLANNING" $MAX_PLANNING_ITERS; then
-        echo "✅ Planning complete!"
-        exit 0
-      fi
+      run_iteration $i "PLANNING" $MAX_PLANNING_ITERS && exit 0
     done
-    echo "❌ Planning: Max iterations reached"
+    echo "❌ Max planning iterations reached"
     exit 1
     ;;
     
   BUILDING)
-    echo "Starting BUILDING mode..."
     cp PROMPT_BUILDING.md PROMPT.md
     for i in $(seq 1 $MAX_BUILDING_ITERS); do
-      if run_iteration $i "BUILDING" $MAX_BUILDING_ITERS; then
-        echo "✅ Building complete!"
-        exit 0
-      fi
+      run_iteration $i "BUILDING" $MAX_BUILDING_ITERS && exit 0
     done
-    echo "❌ Building: Max iterations reached"
+    echo "❌ Max building iterations reached"
     exit 1
     ;;
     
   BOTH)
-    echo "Starting BOTH mode (Planning → Building)..."
-    
-    # Phase 1: Planning
-    echo ""
-    echo "========================================"
-    echo "=== PHASE 1: PLANNING ==="
-    echo "========================================"
+    # Planning phase
     cp PROMPT_PLANNING.md PROMPT.md
     for i in $(seq 1 $MAX_PLANNING_ITERS); do
-      if run_iteration $i "PLANNING" $MAX_PLANNING_ITERS; then
-        echo "✅ Planning phase complete!"
-        break
-      fi
-      if [[ $i -eq $MAX_PLANNING_ITERS ]]; then
-        echo "⚠️ Planning: Max iterations reached, proceeding to building anyway..."
-      fi
+      run_iteration $i "PLANNING" $MAX_PLANNING_ITERS && break
+      [[ $i -eq $MAX_PLANNING_ITERS ]] && echo "⚠️ Planning incomplete, proceeding..."
     done
     
-    # Phase 2: Building
-    echo ""
-    echo "========================================"
-    echo "=== PHASE 2: BUILDING ==="
-    echo "========================================"
+    # Building phase
     cp PROMPT_BUILDING.md PROMPT.md
-    # Clear completion sentinel for building phase
     sed -i '/STATUS:.*COMPLETE/d' IMPLEMENTATION_PLAN.md 2>/dev/null || true
     
     for i in $(seq 1 $MAX_BUILDING_ITERS); do
-      if run_iteration $i "BUILDING" $MAX_BUILDING_ITERS; then
-        echo "✅ Building phase complete!"
-        echo "🎉 All done!"
-        exit 0
-      fi
+      run_iteration $i "BUILDING" $MAX_BUILDING_ITERS && exit 0
     done
-    echo "❌ Building: Max iterations reached"
-    exit 1
-    ;;
-    
-  *)
-    echo "❌ Invalid MODE: $MODE (must be PLANNING, BUILDING, or BOTH)"
+    echo "❌ Max building iterations reached"
     exit 1
     ;;
 esac
 ```
 
-### Template 2: Simple Loop Mode (Legacy, for Non-Interactive CLIs)
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# ========== Configuration ==========
-CLI_CMD="aider"  # or any non-interactive CLI
-CLI_FLAGS=""
-PROMISE=""  # optional: phrase to detect in logs
-MAX_ITERS=10
-PLAN_SENTINEL='STATUS: COMPLETE'
-TEST_CMD=""  # optional: test command to run
-
-if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  echo "❌ Run this inside a git repo."
-  exit 1
-fi
-
-touch PROMPT.md AGENTS.md IMPLEMENTATION_PLAN.md
-LOG_FILE=".ralph/ralph.log"
-mkdir -p .ralph
-
-# ========== Main Loop ==========
-for i in $(seq 1 "$MAX_ITERS"); do
-  echo -e "\n=== Ralph iteration $i/$MAX_ITERS ===" | tee -a "$LOG_FILE"
-
-  $CLI_CMD $CLI_FLAGS "$(cat PROMPT.md)" 2>&1 | tee -a "$LOG_FILE"
-
-  if [[ -n "${TEST_CMD}" ]]; then
-    echo "Running tests: $TEST_CMD" | tee -a "$LOG_FILE"
-    bash -lc "$TEST_CMD" 2>&1 | tee -a "$LOG_FILE"
-  fi
-
-  if [[ -n "${PROMISE}" ]] && grep -Fq "$PROMISE" "$LOG_FILE"; then
-    echo "✅ Promise phrase detected. Stopping." | tee -a "$LOG_FILE"
-    exit 0
-  fi
-  
-  if grep -Eq "$PLAN_SENTINEL" IMPLEMENTATION_PLAN.md 2>/dev/null; then
-    echo "✅ Completion detected. Stopping." | tee -a "$LOG_FILE"
-    exit 0
-  fi
-
-done
-
-echo "❌ Max iterations reached without completion." | tee -a "$LOG_FILE"
-exit 1
-```
-
-### Minimal Loop (Geoff Style)
-
-For quick iterations without any controls:
-
-```bash
-# PLANNING
-while :; do cat PROMPT_PLANNING.md | opencode run --model github-copilot/claude-opus-4.5; done
-
-# BUILDING
-while :; do cat PROMPT_BUILDING.md | opencode run --model github-copilot/claude-opus-4.5; done
-```
-
-**⚠️ Warning**: No completion detection, no timeout, no logs. Use `Ctrl+C` to stop manually.
+**Usage**:
+1. Save as `ralph-loop.sh`
+2. Adjust configuration variables
+3. Run: `./ralph-loop.sh`
 
 ---
 
-## Completion Detection (Improved)
+## Completion Detection
 
-### Flexible Regex Pattern
+Use flexible regex to match variations:
 
-**Problem**: Original regex was too strict:
 ```bash
-# ❌ Too strict (exact match only)
-grep -Fq "STATUS: PLANNING_COMPLETE" IMPLEMENTATION_PLAN.md
-```
-
-**Solution**: Flexible regex supports multiple formats:
-```bash
-# ✅ Flexible (handles variations)
 grep -Eq "STATUS:?\s*(PLANNING_)?COMPLETE" IMPLEMENTATION_PLAN.md
 ```
 
@@ -447,159 +303,38 @@ grep -Eq "STATUS:?\s*(PLANNING_)?COMPLETE" IMPLEMENTATION_PLAN.md
 - `STATUS: COMPLETE`
 - `STATUS:COMPLETE`
 - `STATUS: PLANNING_COMPLETE`
-- `STATUS:PLANNING_COMPLETE`
 - `## Status: PLANNING_COMPLETE`
 
 ---
 
-## Real-World Examples
+## Safety & Guardrails
 
-### Example 1: OpenCode + BOTH Mode (Nexus MCP Server)
-
-**Request**:
-> Create a Ralph loop for OpenCode, BOTH mode, building a Nexus MCP server with HTTP streaming transport
-
-**Generated Script**:
-```bash
-#!/usr/bin/env bash
-CLI_CMD="opencode run"
-MODEL="github-copilot/claude-opus-4.5"
-CLI_FLAGS="--model $MODEL"
-MODE="BOTH"
-MAX_PLANNING_ITERS=5
-MAX_BUILDING_ITERS=10
-
-# ... (uses exec + process template)
-```
-
-**Result**:
-- ✅ Planning: 3 minutes (1 iteration)
-- ✅ Building: 27 minutes (1 iteration)
-- ✅ 17 tasks implemented
-- ✅ 26 tests passing
-- ✅ Auto-commit with proper messages
-
-### Example 2: Codex Batch PR Reviews (Parallel)
-
-**Request**:
-> Review PRs #86, #87, #95 in parallel using Codex
-
-**Generated Script**:
-```bash
-#!/usr/bin/env bash
-# Fetch all PR refs
-git fetch origin '+refs/pull/*/head:refs/remotes/origin/pr/*'
-
-# Launch parallel reviews
-for pr in 86 87 95; do
-  PROMPT="Review PR #$pr using git diff origin/main...origin/pr/$pr"
-  
-  SESSION_ID=$(openclaw exec \
-    command:"codex exec --full-auto \"$PROMPT\"" \
-    workdir:"$PWD" \
-    background:true)
-  
-  echo "PR #$pr: session $SESSION_ID"
-done
-
-# Monitor all sessions
-openclaw process action:list
-
-# Post results to GitHub (manually after review)
-```
-
-**Result**:
-- ✅ 3 PRs reviewed in parallel
-- ✅ Each session isolated
-- ✅ No branch conflicts
-
-### Example 3: Pi with Custom Provider
-
-**Request**:
-> Use Pi with OpenAI GPT-4o-mini to refactor code
-
-**Generated Script**:
-```bash
-CLI_CMD="pi"
-CLI_FLAGS="--provider openai --model gpt-4o-mini -p"
-MODE="BUILDING"
-MAX_BUILDING_ITERS=5
-
-# ... (uses exec + process template with Pi-specific flags)
-```
-
----
-
-## Safety & Sandbox Guidance
-
-### Auto-Approve Flags (Dangerous!)
-
-Running with auto-approve flags implies **trust + risk**:
-
-- **Codex**: `--full-auto` (sandboxed but auto-approves), `--yolo` (NO sandbox, NO approvals)
-- **Claude Code**: `--dangerously-skip-permissions`
-- **OpenCode**: (no special flag, always prompts)
-
-### Recommended Sandbox Options
-
-1. **Docker**: Run inside container with limited privileges
-2. **E2B**: Ephemeral sandboxed environments
-3. **Fly.io**: Isolated VMs
-4. **Git worktrees**: Isolated branches (doesn't protect filesystem)
+### Auto-Approve Flags (Risky!)
+- Codex: `--full-auto` (sandboxed, auto-approves) or `--yolo` (no sandbox!)
+- Claude: `--dangerously-skip-permissions`
+- **Recommendation**: Use sandbox (docker/e2b/fly) with limited credentials
 
 ### Escape Hatches
+- Stop: `Ctrl+C`
+- Kill session: `openclaw process action:kill sessionId:XXX`
+- Revert: `git reset --hard HEAD~N`
 
-- **Stop loop**: `Ctrl+C`
-- **Kill session**: `openclaw process action:kill sessionId:XXX`
-- **Revert changes**: `git reset --hard HEAD~N`
-- **Cleanup**: `rm -rf .ralph/`
-
----
-
-## Guardrails
-
-1. **Requirements first**: If requirements are unclear, insist on specs before BUILDING
-2. **Plan validation**: If the plan looks stale/wrong, regenerate it (PLANNING loop)
-3. **Backpressure**: If backpressure commands are missing, ask for them and add to `AGENTS.md`
-4. **Workdir isolation**: Always use `workdir:` to prevent agents reading unrelated files
-5. **Timeout limits**: Set reasonable timeouts (default 1 hour per iteration)
-6. **Monitor don't interfere**: Use `process:log` to check progress, don't kill prematurely
+### Best Practices
+1. **Start small**: Test with 1-2 iterations first
+2. **Workdir isolation**: Prevent reading unrelated files
+3. **Set timeouts**: Default 1 hour may not suit all tasks
+4. **Monitor actively**: Check logs, don't kill prematurely
+5. **Requirements first**: Clear specs before building
+6. **Backpressure early**: Add tests from the start
 
 ---
 
 ## Troubleshooting
 
-### OpenCode hangs in simple loop mode
-**Problem**: OpenCode requires TTY, hangs in background without it  
-**Solution**: Use exec + process mode instead
-
-### Session not starting
-**Problem**: `openclaw exec` fails with no session ID  
-**Solution**: Check command syntax, ensure CLI is in PATH, verify git repo exists
-
-### Completion not detected
-**Problem**: Loop continues even after task is done  
-**Solution**: Check `IMPLEMENTATION_PLAN.md` for exact sentinel format, use flexible regex
-
-### Process times out
-**Problem**: Agent stuck, times out after 1 hour  
-**Solution**: Check logs in `.ralph/`, increase timeout, or simplify task
-
-### Multiple sessions conflict
-**Problem**: Parallel sessions modify same files  
-**Solution**: Use git worktrees for true isolation
-
----
-
-## Tips & Best Practices
-
-1. **Start small**: Test with 1-2 iterations before running full loop
-2. **Check logs**: Review `.ralph/*.log` files after each iteration
-3. **Incremental commits**: Each iteration should commit changes
-4. **Clear prompts**: Be specific in PROMPT.md about what to implement
-5. **Backpressure early**: Add tests from the start, not at the end
-6. **Monitor actively**: Check `openclaw process action:list` periodically
-7. **Use worktrees for parallel work**: Avoid file conflicts
-8. **Set realistic timeouts**: Some tasks take longer than 1 hour
-9. **Version control everything**: Commit specs, prompts, plans
-10. **Learn from logs**: Update AGENTS.md with operational learnings
+| Problem | Solution |
+|---------|----------|
+| OpenCode hangs | Use exec + process mode (needs TTY) |
+| Session won't start | Check CLI path, git repo, command syntax |
+| Completion not detected | Verify sentinel format, use flexible regex |
+| Process times out | Increase timeout or simplify task |
+| Parallel conflicts | Use git worktrees for isolation |
