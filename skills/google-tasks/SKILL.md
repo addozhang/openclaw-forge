@@ -1,6 +1,10 @@
 ---
 name: google-tasks
+version: 1.0.0
 description: Fetch, display, create, and delete Google Tasks using the Google Tasks API. Use when the user asks to check, view, list, get, add, create, remove, or delete their Google Tasks, to-do lists, or task items. Handles OAuth authentication automatically using bash script with curl and jq.
+author: OpenClaw Community
+keywords: [google-tasks, tasks, todo, productivity, bash, oauth]
+license: MIT
 ---
 
 # Google Tasks Skill
