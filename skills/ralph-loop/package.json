@@ -1,6 +1,6 @@
 {
   "name": "@openclaw-community/ralph-loop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Generate copy-paste bash scripts for Ralph Wiggum/AI agent loops (Codex, Claude Code, OpenCode, Goose). Solves TTY hanging issues with exec + process mode. Supports PLANNING/BUILDING workflows, background monitoring, and completion detection.",
   "keywords": [
     "ralph-loop",
@@ -59,7 +59,9 @@
     },
     "localization": {
       "primary": "en-US",
-      "supported": ["en-US"]
+      "supported": [
+        "en-US"
+      ]
     }
   },
   "contributors": [
