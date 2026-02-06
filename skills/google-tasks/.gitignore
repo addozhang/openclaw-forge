@@ -1,0 +1,6 @@
+# Google OAuth credentials and tokens
+token.json
+credentials.json
+
+# Backup files
+*.bak

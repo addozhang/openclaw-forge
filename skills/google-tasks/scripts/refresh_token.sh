@@ -4,9 +4,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-TOKEN_FILE="$WORKSPACE/token.json"
-CRED_FILE="$WORKSPACE/credentials.json"
+SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+TOKEN_FILE="$SKILL_DIR/token.json"
+CRED_FILE="$SKILL_DIR/credentials.json"
 
 # Check if files exist
 if [ ! -f "$TOKEN_FILE" ]; then

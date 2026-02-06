@@ -49,18 +49,30 @@ echo ""
 
 # Google Tasks
 echo "**📋 今日任务**"
-TASKS_OUTPUT=$("$HOME/.openclaw/workspace/skills/google-tasks/scripts/get_tasks.sh" 2>/dev/null)
+TASKS_SCRIPT="$HOME/.openclaw/workspace/skills/google-tasks/scripts/get_tasks.sh"
 
-if [ -n "$TASKS_OUTPUT" ]; then
-    # 提取未完成的任务
-    INCOMPLETE_TASKS=$(echo "$TASKS_OUTPUT" | grep -A 100 "未完成" | grep "^[0-9]" | head -5)
-    if [ -n "$INCOMPLETE_TASKS" ]; then
-        echo "$INCOMPLETE_TASKS"
+if [ -f "$TASKS_SCRIPT" ]; then
+    TASKS_OUTPUT=$("$TASKS_SCRIPT" 2>&1)
+    TASKS_EXIT_CODE=$?
+    
+    if [ $TASKS_EXIT_CODE -eq 0 ] && [ -n "$TASKS_OUTPUT" ]; then
+        # 检查是否包含错误信息
+        if echo "$TASKS_OUTPUT" | grep -qi "error\|failed\|过期"; then
+            echo "- ⚠️ 任务获取失败（可能需要重新授权）"
+        else
+            # 提取未完成的任务
+            INCOMPLETE_TASKS=$(echo "$TASKS_OUTPUT" | grep -A 100 "未完成" | grep "^[0-9]" | head -5)
+            if [ -n "$INCOMPLETE_TASKS" ]; then
+                echo "$INCOMPLETE_TASKS"
+            else
+                echo "- ✅ 没有待办任务，轻松的一天！"
+            fi
+        fi
     else
-        echo "- ✅ 没有待办任务，轻松的一天！"
+        echo "- ⚠️ 任务获取失败"
     fi
 else
-    echo "- 📝 任务列表为空"
+    echo "- 📝 任务功能未配置"
 fi
 echo ""
 
