@@ -54,90 +54,10 @@ openclaw-forge/
 │   └── obsidian-organizer/    # Obsidian note manager
 ├── README.md           # English documentation
 ├── README_zh.md        # Chinese documentation
-├── AGENTS.md           # This file (agent guidelines)
-├── CONTRIBUTING.md     # Contribution guidelines
+├── AGENTS.md           # This file (agent work patterns)
+├── CONTRIBUTING.md     # Contribution and skill development guidelines
 └── LICENSE             # MIT License
 ```
-
-## Skill Development Standards
-
-### Required Files
-
-Every skill directory must include:
-
-1. **SKILL.md** - Core documentation
-   - Frontmatter (name, description, version, keywords, license)
-   - Overview
-   - Usage instructions
-   - Examples
-   - Troubleshooting
-
-2. **README.md** - GitHub display page
-   - User-facing introduction
-   - Quick Start
-   - Installation
-   - Configuration
-   - Credits/Acknowledgments
-
-3. **package.json** - Clawhub metadata
-   ```json
-   {
-     "name": "@addozhang/skill-name",
-     "version": "1.0.0",
-     "description": "English description",
-     "keywords": ["keyword1", "keyword2"],
-     "author": "Addo Zhang",
-     "license": "MIT",
-     "repository": {
-       "type": "git",
-       "url": "https://github.com/addozhang/openclaw-forge.git",
-       "directory": "skills/skill-name"
-     },
-     "openclaw": {
-       "type": "skill",
-       "category": "category-name"
-     }
-   }
-   ```
-
-4. **.gitignore** - Protect sensitive files
-   ```
-   # Credentials and tokens
-   token.json
-   credentials.json
-   *.key
-   *.pem
-   
-   # Temporary files
-   *.log
-   *.tmp
-   *.bak
-   *~
-   
-   # Agent temporary files
-   CHANGES.md
-   PAUSE.md
-   CLAWHUB_CHECKLIST.md
-   ```
-
-### Optional Files
-
-- **scripts/** - Executable scripts
-- **references/** - Reference documentation
-- **tests/** - Test files
-
-### Files NOT to Commit
-
-- ❌ Authentication tokens (token.json, credentials.json)
-- ❌ Temporary files (CHANGES.md, PAUSE.md, CLAWHUB_CHECKLIST.md)
-- ❌ Duplicate scripts (multiple language implementations of same function)
-- ❌ Backup files (*.bak, *~, *.backup)
-
-## Documentation Language Standards
-
-- **Code, Docs, README**: English
-- **Commit messages**: English
-- **User interaction**: Based on user preference (set in USER.md)
 
 ## Testing Strategy
 
@@ -154,9 +74,23 @@ For agent-executed skills (like ralph-loop):
 - Verify exec/process tool calls are correct
 - Check output and file modifications
 
-## Common Issues
+## Project Maintenance
 
-### Q: Found sensitive files in commit?
+### Regular Cleanup Tasks
+
+```bash
+# Find temporary files
+find . -name "CHANGES.md" -o -name "PAUSE.md" -o -name "*.bak"
+
+# Remove temporary files
+find . -name "CHANGES.md" -delete
+find . -name "PAUSE.md" -delete
+find . -name "*.bak" -delete
+```
+
+### Common Issues
+
+**Q: Found sensitive files in commit?**
 
 ```bash
 # 1. Remove from Git (keep local file)
@@ -171,41 +105,12 @@ git commit -m "chore: protect sensitive files"
 git push
 ```
 
-### Q: How to streamline long skill documentation?
-
-Reference ralph-loop streamlining process:
-- Remove duplicate examples (keep 1-2 core examples)
-- Remove overly detailed implementation details
-- Remove advanced/edge cases
-- Remove FAQ (if Troubleshooting already covers)
-- Goal: Keep core functionality clear and concise
-
-## Project Maintenance
-
-### Regular Checks
-
-- Check for outdated skills
-- Update dependencies and documentation
-- Clean up temporary files
-
-### Cleanup Commands
-
-```bash
-# Find temporary files
-find . -name "CHANGES.md" -o -name "PAUSE.md" -o -name "*.bak"
-
-# Batch delete
-find . -name "CHANGES.md" -delete
-find . -name "PAUSE.md" -delete
-find . -name "*.bak" -delete
-```
-
 ## Resource Links
 
 - **OpenClaw Docs**: https://docs.openclaw.ai
 - **Clawhub**: https://clawhub.com
 - **GitHub Repository**: https://github.com/addozhang/openclaw-forge
-- **Contributing Guide**: See [CONTRIBUTING.md](CONTRIBUTING.md) for publishing and contribution workflow
+- **Contributing Guide**: See [CONTRIBUTING.md](CONTRIBUTING.md) for skill development standards and publishing workflow
 
 ---
 
