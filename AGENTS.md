@@ -1,44 +1,44 @@
 # Agent Work Patterns
 
-通用的工作流程和最佳实践，适用于所有 AI agents 在 openclaw-forge 项目中工作。
+General workflows and best practices for all AI agents working on the openclaw-forge project.
 
 ## Git Workflow
 
-### 提交规范
+### Commit Conventions
 
-使用 Conventional Commits 格式：
+Use Conventional Commits format:
 
 ```bash
-# 完成任务后立即提交
+# Commit after completing each task
 git add .
 git commit -m "<type>(<scope>): <description>"
 
-# Type 类型：
-# feat:     新功能
-# fix:      修复 bug
-# docs:     文档更新
-# chore:    杂务（清理、重命名等）
-# refactor: 重构
-# test:     测试相关
-# style:    代码格式（不影响功能）
+# Types:
+# feat:     New feature
+# fix:      Bug fix
+# docs:     Documentation update
+# chore:    Maintenance (cleanup, rename, etc.)
+# refactor: Code refactoring
+# test:     Test-related changes
+# style:    Code formatting (no functional change)
 
-# Scope 范围：
-# skill 名称、agent 名称或文件名
+# Scope:
+# Skill name, agent name, or file name
 
-# 示例：
+# Examples:
 git commit -m "feat(ralph-loop): add exec tool support with pty"
 git commit -m "docs(google-tasks): update authentication guide"
 git commit -m "chore: clean up temporary files"
 ```
 
-### 推送到 GitHub
+### Push to GitHub
 
 ```bash
-# 确保在 main 分支
+# Ensure on main branch
 git push origin main
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 openclaw-forge/
@@ -52,32 +52,34 @@ openclaw-forge/
 ├── agents/              # Autonomous agents
 │   ├── daily-briefing/        # Daily briefing generator
 │   └── obsidian-organizer/    # Obsidian note manager
-├── README.md           # English docs
-├── README_zh.md        # 中文文档
-└── AGENTS.md           # 本文件（agent 工作指南）
+├── README.md           # English documentation
+├── README_zh.md        # Chinese documentation
+├── AGENTS.md           # This file (agent guidelines)
+├── CONTRIBUTING.md     # Contribution guidelines
+└── LICENSE             # MIT License
 ```
 
-## Skill 开发规范
+## Skill Development Standards
 
-### 必需文件
+### Required Files
 
-每个 skill 目录必须包含：
+Every skill directory must include:
 
-1. **SKILL.md** - 核心文档
+1. **SKILL.md** - Core documentation
    - Frontmatter (name, description, version, keywords, license)
    - Overview
    - Usage instructions
    - Examples
    - Troubleshooting
 
-2. **README.md** - GitHub 展示页
-   - 面向用户的介绍
+2. **README.md** - GitHub display page
+   - User-facing introduction
    - Quick Start
    - Installation
    - Configuration
    - Credits/Acknowledgments
 
-3. **package.json** - Clawhub 元数据
+3. **package.json** - Clawhub metadata
    ```json
    {
      "name": "@addozhang/skill-name",
@@ -98,182 +100,181 @@ openclaw-forge/
    }
    ```
 
-4. **.gitignore** - 保护敏感文件
+4. **.gitignore** - Protect sensitive files
    ```
-   # 凭证和令牌
+   # Credentials and tokens
    token.json
    credentials.json
    *.key
    *.pem
    
-   # 临时文件
+   # Temporary files
    *.log
    *.tmp
    *.bak
    *~
    
-   # Agent 临时文件
+   # Agent temporary files
    CHANGES.md
    PAUSE.md
    CLAWHUB_CHECKLIST.md
    ```
 
-### 可选文件
+### Optional Files
 
-- **scripts/** - 可执行脚本
-- **references/** - 参考文档
-- **tests/** - 测试文件
+- **scripts/** - Executable scripts
+- **references/** - Reference documentation
+- **tests/** - Test files
 
-### 不应提交的文件
+### Files NOT to Commit
 
-- ❌ 认证令牌 (token.json, credentials.json)
-- ❌ 临时文件 (CHANGES.md, PAUSE.md, CLAWHUB_CHECKLIST.md)
-- ❌ 重复的脚本 (多个语言实现同一功能)
-- ❌ Backup 文件 (*.bak, *~, *.backup)
+- ❌ Authentication tokens (token.json, credentials.json)
+- ❌ Temporary files (CHANGES.md, PAUSE.md, CLAWHUB_CHECKLIST.md)
+- ❌ Duplicate scripts (multiple language implementations of same function)
+- ❌ Backup files (*.bak, *~, *.backup)
 
-## 文档语言规范
+## Documentation Language Standards
 
-- **代码、文档、README**：英文
-- **AGENTS.md、内部注释**：中文（团队沟通）
-- **Commit messages**：英文
-- **用户交互**：根据用户偏好（User.md 中设置）
+- **Code, Docs, README**: English
+- **Commit messages**: English
+- **User interaction**: Based on user preference (set in USER.md)
 
-## 发布到 Clawhub
+## Publishing to Clawhub
 
-### 发布前检查清单
+### Pre-Publication Checklist
 
-1. ✅ 所有必需文件已创建
-2. ✅ SKILL.md 英文完整
-3. ✅ README.md 包含 Quick Start
-4. ✅ package.json 元数据正确
-5. ✅ .gitignore 保护敏感文件
-6. ✅ 敏感文件未提交到 Git
-7. ✅ 已提交并推送到 GitHub
-8. ✅ 测试功能正常（如可行）
+1. ✅ All required files created
+2. ✅ SKILL.md in English and complete
+3. ✅ README.md includes Quick Start
+4. ✅ package.json metadata correct
+5. ✅ .gitignore protects sensitive files
+6. ✅ Sensitive files not committed to Git
+7. ✅ Changes committed and pushed to GitHub
+8. ✅ Functionality tested (if applicable)
 
-### 发布命令
+### Publishing Commands
 
 ```bash
-# 1. 确保在 skill 目录
+# 1. Navigate to skill directory
 cd ~/openclaw-forge/skills/skill-name
 
-# 2. 验证文件
-ls -la  # 检查是否有临时文件
-cat package.json  # 验证元数据
+# 2. Verify files
+ls -la  # Check for temporary files
+cat package.json  # Verify metadata
 
-# 3. 发布到 Clawhub
+# 3. Publish to Clawhub
 clawhub publish
 
-# 4. 验证发布
+# 4. Verify publication
 clawhub search skill-name
 ```
 
-## Clawhub 常用命令
+## Clawhub Common Commands
 
 ```bash
-# 登录
+# Login
 clawhub login
 
-# 搜索 skill
+# Search for skills
 clawhub search <query>
 
-# 查看已发布的 skills
+# List published skills
 clawhub list
 
-# 更新已发布的 skill
+# Update published skill
 cd skills/skill-name
-clawhub publish  # 自动识别版本更新
+clawhub publish  # Auto-detects version update
 
-# 安装 skill
+# Install skill
 clawhub install <skill-id>
 ```
 
-## 测试策略
+## Testing Strategy
 
-### Skill 测试
+### Skill Testing
 
-1. **简单验证**：检查语法和文件结构
-2. **功能测试**：如果 skill 包含脚本，运行测试命令
-3. **真实场景**：在实际项目中使用 skill
+1. **Simple validation**: Check syntax and file structure
+2. **Functional testing**: If skill includes scripts, run test commands
+3. **Real-world scenario**: Use skill in actual project
 
-### Agent 测试
+### Agent Testing
 
-对于 agent 执行的 skill（如 ralph-loop）：
-- 让 agent 使用 skill 执行一个简单任务
-- 验证 exec/process tool 调用正确
-- 检查输出和文件修改
+For agent-executed skills (like ralph-loop):
+- Have agent use skill to execute a simple task
+- Verify exec/process tool calls are correct
+- Check output and file modifications
 
-## 常见问题
+## Common Issues
 
-### Q: 提交时发现有敏感文件怎么办？
+### Q: Found sensitive files in commit?
 
 ```bash
-# 1. 从 Git 中移除（保留本地文件）
+# 1. Remove from Git (keep local file)
 git rm --cached path/to/sensitive-file
 
-# 2. 添加到 .gitignore
+# 2. Add to .gitignore
 echo "sensitive-file" >> .gitignore
 
-# 3. 提交更改
+# 3. Commit changes
 git add .gitignore
 git commit -m "chore: protect sensitive files"
 git push
 ```
 
-### Q: 如何更新已发布的 skill？
+### Q: How to update published skill?
 
 ```bash
-# 1. 更新版本号
-# 编辑 package.json 和 SKILL.md frontmatter 中的 version
+# 1. Update version number
+# Edit version in package.json and SKILL.md frontmatter
 
-# 2. 提交更改
+# 2. Commit changes
 git add .
 git commit -m "feat(skill-name): description of changes"
 git push
 
-# 3. 重新发布
+# 3. Re-publish
 cd skills/skill-name
 clawhub publish
 ```
 
-### Q: Skill 文档太长怎么精简？
+### Q: How to streamline long skill documentation?
 
-参考 ralph-loop 的精简过程：
-- 删除重复的例子（保留 1-2 个核心示例）
-- 删除过于详细的实现细节
-- 删除高级/边缘用例
-- 删除 FAQ（如果 Troubleshooting 已覆盖）
-- 目标：保持核心功能说明清晰简洁
+Reference ralph-loop streamlining process:
+- Remove duplicate examples (keep 1-2 core examples)
+- Remove overly detailed implementation details
+- Remove advanced/edge cases
+- Remove FAQ (if Troubleshooting already covers)
+- Goal: Keep core functionality clear and concise
 
-## 项目维护
+## Project Maintenance
 
-### 定期检查
+### Regular Checks
 
-- 检查是否有过期的 skills
-- 更新依赖和文档
-- 清理临时文件
+- Check for outdated skills
+- Update dependencies and documentation
+- Clean up temporary files
 
-### 清理命令
+### Cleanup Commands
 
 ```bash
-# 查找临时文件
+# Find temporary files
 find . -name "CHANGES.md" -o -name "PAUSE.md" -o -name "*.bak"
 
-# 批量删除
+# Batch delete
 find . -name "CHANGES.md" -delete
 find . -name "PAUSE.md" -delete
 find . -name "*.bak" -delete
 ```
 
-## 资源链接
+## Resource Links
 
-- **OpenClaw 文档**: https://docs.openclaw.ai
+- **OpenClaw Docs**: https://docs.openclaw.ai
 - **Clawhub**: https://clawhub.com
-- **GitHub 仓库**: https://github.com/addozhang/openclaw-forge
-- **已发布的 Skills**:
+- **GitHub Repository**: https://github.com/addozhang/openclaw-forge
+- **Published Skills**:
   - google-tasks: https://clawhub.com/skills/google-tasks
-  - (其他 skills 发布后在此添加)
+  - (Add other skills here after publication)
 
 ---
 
-**Note**: 本文件持续更新。Agent 在工作中发现的新模式和最佳实践应及时添加。
+**Note**: This file is continuously updated. New patterns and best practices discovered during work should be added promptly.
