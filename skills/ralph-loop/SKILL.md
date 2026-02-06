@@ -246,79 +246,6 @@ exec tool:
 # Then monitor with process tool as above
 ```
 
-### Example 3: Claude Code
-
-**Agent tool calls:**
-
-```
-exec tool:
-{
-  command: "claude --dangerously-skip-permissions \"$(cat PROMPT.md)\"",
-  workdir: "/path/to/project",
-  background: true,
-  pty: true,
-  timeout: 3600
-}
-
-# Monitor with process tool
-```
-
-### Example 4: Goose
-
-**Agent tool calls:**
-
-```
-exec tool:
-{
-  command: "goose run \"$(cat PROMPT.md)\"",
-  workdir: "/path/to/project",
-  background: true,
-  pty: true,
-  timeout: 3600
-}
-
-# Monitor with process tool
-```
-
----
-
-## Agent Implementation Template
-
-When the agent receives a Ralph Loop request, it follows this pattern:
-
-```
-1. Validate prerequisites:
-   - Check git repository (read .git/config)
-   - Ensure required files exist (PROMPT.md, AGENTS.md, IMPLEMENTATION_PLAN.md)
-
-2. Construct command string based on CLI choice:
-   - Use CLI command reference table above
-   - Insert model, flags, and prompt file reference
-
-3. Call exec tool:
-   - Set command, workdir, pty: true, background: true
-   - Set appropriate timeout (default 3600s)
-   - Capture session ID from response
-
-4. Monitor loop (every 10-30 seconds):
-   - Call process tool with action: "poll" to check status
-   - Call process tool with action: "log" to get recent output
-   - Check if process exited
-   
-5. Check completion condition:
-   - Read IMPLEMENTATION_PLAN.md
-   - Search for completion sentinel (regex: STATUS:\s*(PLANNING_)?COMPLETE)
-   
-6. Handle iteration:
-   - If complete: report success and cleanup
-   - If not complete and under max iterations: repeat from step 3
-   - If max iterations reached: report and cleanup
-   
-7. Cleanup:
-   - Call process tool with action: "kill" if needed
-   - Save logs for debugging
-```
-
 ---
 
 ## Completion Detection
@@ -346,7 +273,7 @@ grep -Eq "STATUS:?\s*(PLANNING_)?COMPLETE" IMPLEMENTATION_PLAN.md
 
 ### Escape Hatches
 - Stop: `Ctrl+C`
-- Kill session: `openclaw process action:kill sessionId:XXX`
+- Kill session: process tool with action: "kill"
 - Rollback: `git reset --hard HEAD~N`
 
 ### Best Practices
@@ -372,135 +299,14 @@ grep -Eq "STATUS:?\s*(PLANNING_)?COMPLETE" IMPLEMENTATION_PLAN.md
 
 ---
 
-## Examples: Agent Execution Patterns
-
-### Example 1: Simple Planning Loop
-
-**Agent configuration:**
-- CLI: OpenCode
-- Model: github-copilot/claude-opus-4.5
-- Mode: PLANNING only
-- Max iterations: 3
-
-**Agent executes:**
-1. Create PROMPT_PLANNING.md
-2. For iterations 1-3:
-   - exec tool with opencode command
-   - Monitor with process tool
-   - Check IMPLEMENTATION_PLAN.md for "STATUS: PLANNING_COMPLETE"
-3. Report results to user
-
-### Example 2: Full BOTH Mode with Codex
-
-**Agent configuration:**
-- CLI: Codex with --full-auto
-- Model: anthropic/claude-opus-4
-- Mode: BOTH (planning then building)
-- Max planning: 5, Max building: 15
-
-**Agent executes:**
-1. Planning phase (5 iterations max)
-2. Building phase (15 iterations max)
-3. Each iteration uses exec + process tools
-4. Final completion check
-
-### Example 3: File-Based CLI (aider)
-
-**For non-interactive CLIs**, agent can use simpler exec pattern:
-
-```
-exec tool (without pty):
-{
-  command: "aider --yes --message \"$(cat PROMPT.md)\"",
-  workdir: "/path/to/project",
-  timeout: 3600
-}
-
-# Wait for completion, read output directly
-# No need for pty: true or background monitoring
-```
-
----
-
-## Advanced Agent Patterns
-
-### Parallel Sessions with Git Worktrees
-
-**Agent can manage multiple sessions:**
-
-```
-1. Create worktree using exec tool:
-   command: "git worktree add ../project-feature-a feature-a"
-
-2. Launch session A:
-   exec tool with workdir: "../project-feature-a"
-   Capture sessionId: "session-a"
-
-3. Launch session B (different worktree):
-   exec tool with workdir: "../project-feature-b"
-   Capture sessionId: "session-b"
-
-4. Monitor both with process tool:
-   Poll session-a and session-b independently
-```
-
-### Custom Completion Conditions
-
-**Agent can check multiple conditions:**
-
-```
-1. Read IMPLEMENTATION_PLAN.md for "STATUS: COMPLETE"
-2. Read test results file
-3. Check multiple files:
-   - All specs implemented?
-   - All tests passing?
-   - Documentation updated?
-```
-
-### Dynamic Model Selection
-
-**Agent can choose model based on phase:**
-
-```
-Planning phase:
-  model: "github-copilot/gpt-4.5-turbo"  (faster)
-
-Building phase:
-  model: "github-copilot/claude-opus-4.5"  (better at coding)
-```
-
----
-
-## FAQ
-
-**Q: Why does OpenCode hang?**  
-A: Interactive CLIs need TTY. The agent must use exec tool with `pty: true`.
-
-**Q: Can multiple loops run simultaneously?**  
-A: Yes, the agent can launch multiple exec sessions with different sessionIds and workdirs.
-
-**Q: How does the agent debug a stuck loop?**  
-A: Use process tool with action: "log" to see real-time output and identify where it's stuck.
-
-**Q: What if the CLI doesn't support piping?**  
-A: The agent can write PROMPT.md to a file first, then reference it in the command string.
-
-**Q: How does the agent change completion conditions?**  
-A: Read IMPLEMENTATION_PLAN.md and search for different patterns using file reading capabilities.
-
-**Q: Is this skill for users to run directly?**  
-A: No, this skill guides **OpenClaw agents** on how to use the exec and process tools. Users request Ralph Loops from their agent, and the agent executes the workflow using its tool capabilities.
-
----
-
 ## License
 
 MIT
 
 ## Credits
 
-Inspired by:
-- **Ralph Loop** by @jordyvandomselaar
-- **Coding Agent** by @steipete
+This skill builds upon work by:
+- **@jordyvandomselaar** - Original Ralph Loop concept and workflow design
+- **@steipete** - Coding agent patterns and exec/process tool usage with pty support
 
-Improved with TTY support via OpenClaw's exec + process mode.
+Key improvement: Uses OpenClaw's `exec` tool with `pty: true` to provide TTY for interactive CLIs, solving the hanging issue that occurs with simple background bash execution.
