@@ -139,56 +139,6 @@ Every skill directory must include:
 - **Commit messages**: English
 - **User interaction**: Based on user preference (set in USER.md)
 
-## Publishing to Clawhub
-
-### Pre-Publication Checklist
-
-1. ✅ All required files created
-2. ✅ SKILL.md in English and complete
-3. ✅ README.md includes Quick Start
-4. ✅ package.json metadata correct
-5. ✅ .gitignore protects sensitive files
-6. ✅ Sensitive files not committed to Git
-7. ✅ Changes committed and pushed to GitHub
-8. ✅ Functionality tested (if applicable)
-
-### Publishing Commands
-
-```bash
-# 1. Navigate to skill directory
-cd ~/openclaw-forge/skills/skill-name
-
-# 2. Verify files
-ls -la  # Check for temporary files
-cat package.json  # Verify metadata
-
-# 3. Publish to Clawhub
-clawhub publish
-
-# 4. Verify publication
-clawhub search skill-name
-```
-
-## Clawhub Common Commands
-
-```bash
-# Login
-clawhub login
-
-# Search for skills
-clawhub search <query>
-
-# List published skills
-clawhub list
-
-# Update published skill
-cd skills/skill-name
-clawhub publish  # Auto-detects version update
-
-# Install skill
-clawhub install <skill-id>
-```
-
 ## Testing Strategy
 
 ### Skill Testing
@@ -219,22 +169,6 @@ echo "sensitive-file" >> .gitignore
 git add .gitignore
 git commit -m "chore: protect sensitive files"
 git push
-```
-
-### Q: How to update published skill?
-
-```bash
-# 1. Update version number
-# Edit version in package.json and SKILL.md frontmatter
-
-# 2. Commit changes
-git add .
-git commit -m "feat(skill-name): description of changes"
-git push
-
-# 3. Re-publish
-cd skills/skill-name
-clawhub publish
 ```
 
 ### Q: How to streamline long skill documentation?
@@ -271,9 +205,7 @@ find . -name "*.bak" -delete
 - **OpenClaw Docs**: https://docs.openclaw.ai
 - **Clawhub**: https://clawhub.com
 - **GitHub Repository**: https://github.com/addozhang/openclaw-forge
-- **Published Skills**:
-  - google-tasks: https://clawhub.com/skills/google-tasks
-  - (Add other skills here after publication)
+- **Contributing Guide**: See [CONTRIBUTING.md](CONTRIBUTING.md) for publishing and contribution workflow
 
 ---
 
