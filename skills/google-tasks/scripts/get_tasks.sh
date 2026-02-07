@@ -1,5 +1,6 @@
 #!/bin/bash
 # Fetch Google Tasks using credentials.json and token.json
+# Auto-refresh token if expired
 
 set -euo pipefail
 
@@ -7,17 +8,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TOKEN_FILE="$SKILL_DIR/token.json"
 
+# Load common functions
+source "$SCRIPT_DIR/common.sh"
+
 # Check if token exists
 if [ ! -f "$TOKEN_FILE" ]; then
     echo "Error: token.json not found. Please authenticate first."
     exit 1
 fi
 
-# Extract access token
-ACCESS_TOKEN=$(jq -r '.access_token // empty' "$TOKEN_FILE")
+# Get access token (with auto-refresh)
+ACCESS_TOKEN=$(get_access_token "$TOKEN_FILE" "$SCRIPT_DIR")
 
 if [ -z "$ACCESS_TOKEN" ]; then
-    echo "Error: Invalid token.json"
+    echo "Error: Failed to get valid access token"
     exit 1
 fi
 
@@ -28,12 +32,37 @@ echo
 LISTS=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
     "https://tasks.googleapis.com/tasks/v1/users/@me/lists")
 
-# Check for auth error
+# Check for auth error (might still happen if refresh failed)
 if echo "$LISTS" | jq -e '.error' > /dev/null 2>&1; then
+    ERROR_CODE=$(echo "$LISTS" | jq -r '.error.code')
     ERROR_MSG=$(echo "$LISTS" | jq -r '.error.message')
-    echo "Error: $ERROR_MSG"
-    echo "Try deleting token.json and re-authenticating"
-    exit 1
+    
+    # If it's an auth error, try refreshing once more
+    if [ "$ERROR_CODE" = "401" ]; then
+        echo "🔄 Authentication failed, attempting token refresh..." >&2
+        
+        if "$SCRIPT_DIR/refresh_token.sh" >&2; then
+            # Retry with new token
+            ACCESS_TOKEN=$(jq -r '.access_token // empty' "$TOKEN_FILE")
+            LISTS=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+                "https://tasks.googleapis.com/tasks/v1/users/@me/lists")
+            
+            # Check again
+            if echo "$LISTS" | jq -e '.error' > /dev/null 2>&1; then
+                ERROR_MSG=$(echo "$LISTS" | jq -r '.error.message')
+                echo "Error: $ERROR_MSG"
+                echo "Please delete token.json and re-authenticate"
+                exit 1
+            fi
+        else
+            echo "Error: $ERROR_MSG"
+            echo "Token refresh failed. Please delete token.json and re-authenticate"
+            exit 1
+        fi
+    else
+        echo "Error: $ERROR_MSG"
+        exit 1
+    fi
 fi
 
 # Process each list

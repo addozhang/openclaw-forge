@@ -11,6 +11,15 @@ license: MIT
 
 Manage Google Tasks from all task lists using lightweight bash scripts.
 
+## Features
+
+- ✅ **Auto-refresh token**: Automatically refreshes expired OAuth tokens
+- ✅ **View all tasks**: Fetch tasks from all task lists
+- ✅ **Create tasks**: Add new tasks to any list with optional due date and notes
+- ✅ **Delete tasks**: Remove tasks by position or title
+- ✅ **Lightweight**: Pure bash, no heavy dependencies
+- ✅ **Simple**: Direct REST API calls, easy to understand
+
 ## Quick Start
 
 ### View tasks
@@ -115,10 +124,17 @@ No Python dependencies required.
 ## Troubleshooting
 
 **Token expired:**
+
+The skill automatically refreshes expired tokens. If you see refresh errors:
 ```
-Error: Invalid credentials
+Error: Failed to refresh token
 ```
 Delete `token.json` and re-authenticate.
+
+**Manual token refresh:**
+```bash
+bash scripts/refresh_token.sh
+```
 
 **Missing jq:**
 ```

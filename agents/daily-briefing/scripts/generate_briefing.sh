@@ -57,13 +57,16 @@ if [ -f "$TASKS_SCRIPT" ]; then
     
     if [ $TASKS_EXIT_CODE -eq 0 ] && [ -n "$TASKS_OUTPUT" ]; then
         # 检查是否包含错误信息
-        if echo "$TASKS_OUTPUT" | grep -qi "error\|failed\|过期"; then
+        if echo "$TASKS_OUTPUT" | grep -qi "error\|failed"; then
             echo "- ⚠️ 任务获取失败（可能需要重新授权）"
         else
-            # 提取未完成的任务
-            INCOMPLETE_TASKS=$(echo "$TASKS_OUTPUT" | grep -A 100 "未完成" | grep "^[0-9]" | head -5)
+            # 提取未完成的任务（查找包含 ⬜ 的行）
+            INCOMPLETE_TASKS=$(echo "$TASKS_OUTPUT" | grep "⬜" | head -5)
             if [ -n "$INCOMPLETE_TASKS" ]; then
-                echo "$INCOMPLETE_TASKS"
+                # 统计任务数量
+                TASK_COUNT=$(echo "$TASKS_OUTPUT" | grep -c "⬜" || echo "0")
+                echo "- 📝 当前有 $TASK_COUNT 个待办任务"
+                echo "$INCOMPLETE_TASKS" | sed 's/^/  /'
             else
                 echo "- ✅ 没有待办任务，轻松的一天！"
             fi
